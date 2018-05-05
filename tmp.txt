@@ -1,0 +1,5 @@
+db.Trade.find()
+db.Position.find()
+db.Trade.drop()
+db.Position.drop()
+show collections

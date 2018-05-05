@@ -1,3 +1,4 @@
+from __future__ import division
 from flask import Flask
 from pymongo import MongoClient # Database connector
 from bson.objectid import ObjectId # For ObjectId to work
@@ -41,7 +42,7 @@ def createTrade():
         #Dump Trade1 to DataBase
         db.Trade.insert(trade1)
 
-		#Evaluating Position for Trade
+    	#Evaluating Position for Trade
         evaluatePosition(trade1, fill)
 
         exSide = "BUY"
@@ -68,23 +69,17 @@ def createTrade():
         #Dump Trade2 to DataBase
         db.Trade.insert(trade2)
 
-    #
-    # cursor = db.Trade.find_one({"bookId" : "111408029", '_id': ObjectId('5ad784f08c61a33aeb4c4270')})
-    # # for document in cursor:
-    # print(cursor["productId"])
-
-
     return "Everything is Okay, Saket :)"
 
 
 
 def evaluatePosition(trade, fill):
 	#Position variables
-    lRealisedPL = 0
-    lUnrealisedPL = 0
-    lNetPosition = 0
-    lAvgPrice = 0
-    lMarketPrice = 0
+    lRealisedPL = -1
+    lUnrealisedPL = -1
+    lNetPosition = -1
+    lAvgPrice = -1
+    lMarketPrice = -1
 
 	#Taking MarketPrice from #Group2
     lMarketPrice = 97;
@@ -93,62 +88,90 @@ def evaluatePosition(trade, fill):
     cursor = db.Position.find_one({"bookId" : fill["bookId"], "productId" : trade["productId"]})
 
     fQtySize = int(fill["qtySize"])
+    tradePrice = float(fill["price"])
 
     if(cursor == None):
-        lAvgPrice = lMarketPrice
+        # netPosition
         if(trade["side"] == "BUY"):
-            lNetPosition = fill["qtySize"]
+            lNetPosition = fQtySize
         else:
             lNetPosition = -1 * fQtySize
-    else:
+        #realisedPL
+        lRealisedPL = 0
+        #avgPrice
+        lAvgPrice = tradePrice
 
+    else:
         cursor["netPosition"] = int(cursor["netPosition"])
-        cursor["avgPrice"] = int(cursor["avgPrice"])
+        cursor["avgPrice"] = float(cursor["avgPrice"])
 
         if(trade["side"] == "BUY"):
-            lNetPosition = cursor["netPosition"] + int(fill["qtySize"])
+            # netPosition
+            lNetPosition = cursor["netPosition"] + fQtySize
+
             if(cursor["netPosition"] > 0):
+                #realisedPL
                 lRealisedPL = 0
-                lAvgPrice = (cursor["avgPrice"] * cursor["netPosition"] + lMarketPrice * fQtySize) / (cursor["netPosition"] + fQtySize)
+                #avgPrice
+                lAvgPrice = (cursor["avgPrice"] * cursor["netPosition"] + tradePrice * fQtySize) / (cursor["netPosition"] + fQtySize)
 
             elif(cursor["netPosition"] < 0):
+                # netPosition
                 if(cursor["netPosition"] + fQtySize < 0):
+                    #avgPrice
                     lAvgPrice = cursor["avgPrice"]
-                    lRealisedPL = (lMarketPrice - cursor["avgPrice"]) * fQtySize
+                    #realisedPL
+                    lRealisedPL = (tradePrice - cursor["avgPrice"]) * fQtySize
 
                 elif(cursor["netPosition"] + fQtySize > 0):
-                    lAvgPrice = lMarketPrice
-                    lRealisedPL = (lMarketPrice - cursor["avgPrice"]) * cursor["netPosition"]
+                    #avgPrice
+                    lAvgPrice = tradePrice
+                    #realisedPL
+                    lRealisedPL = (tradePrice - cursor["avgPrice"]) * cursor["netPosition"]
 
                 else:
+                    #avgPrice
                     lAvgPrice = 0
-                    lRealisedPL = (lMarketPrice - cursor["avgPrice"]) * fQtySize
+                    #realisedPL
+                    lRealisedPL = (tradePrice - cursor["avgPrice"]) * fQtySize
 
             else:
-                lAvgPrice = lMarketPrice
+                #avgPrice
+                lAvgPrice = tradePrice
+                #realisedPL
                 lRealisedPL = 0
         else:
-            lNetPosition = cursor["netPosition"] - fill["qtySize"]
+            # netPosition
+            lNetPosition = cursor["netPosition"] - fQtySize
             if(cursor["netPosition"] < 0):
-                lAvgPrice = (cursor["avgPrice"] * cursor["netPosition"] + lMarketPrice * fQtySize) / (cursor["netPosition"] + fQtySize)
+                #avgPrice
+                lAvgPrice = (cursor["avgPrice"] * cursor["netPosition"] + tradePrice * fQtySize) / (cursor["netPosition"] + fQtySize)
+                #realisedPL
                 lRealisedPL = 0
             elif(cursor["netPosition"] > 0):
                 if(cursor["netPosition"] - fQtySize > 0):
+                    #avgPrice
                     lAvgPrice = cursor["avgPrice"]
-                    lRealisedPL = (lMarketPrice - cursor["avgPrice"]) * fQtySize
+                    #realisedPL
+                    lRealisedPL = (tradePrice - cursor["avgPrice"]) * fQtySize
 
                 elif(cursor["netPosition"] - fQtySize < 0):
-                    lAvgPrice = lMarketPrice
-                    lRealisedPL = (lMarketPrice - cursor["avgPrice"]) * cursor["netPosition"]
+                    #avgPrice
+                    lAvgPrice = tradePrice
+                    #realisedPL
+                    lRealisedPL = (tradePrice - cursor["avgPrice"]) * cursor["netPosition"]
 
                 else:
+                    #avgPrice
                     lAvgPrice = 0
-                    lRealisedPL = (lMarketPrice - cursor["avgPrice"]) * fQtySize
+                    #realisedPL
+                    lRealisedPL = (tradePrice - cursor["avgPrice"]) * fQtySize
 
             else:
-                lAvgPrice = lMarketPrice
+                #avgPrice
+                lAvgPrice = tradePrice
+                #realisedPL
                 lRealisedPL = 0
-
 
     db.Position.update({
     	"bookId" : fill["bookId"],
@@ -157,13 +180,12 @@ def evaluatePosition(trade, fill):
     {
     	"bookId" : fill["bookId"],
     	"productId" : trade["productId"],
-    	"realisedPL" : lRealisedPL,
-    	"unrealisedPL" : lUnrealisedPL,
     	"netPosition" : lNetPosition,
+    	"realisedPL" : lRealisedPL,
     	"avgPrice" : lAvgPrice,
+    	"unrealisedPL" : lUnrealisedPL,
     	"marketPrice" : lMarketPrice
     }, upsert = True)
-
 
 
 if __name__ == '__main__':
