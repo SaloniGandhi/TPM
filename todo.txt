@@ -1,0 +1,8 @@
+1. Write a script to get marketvalue from Group2.
+2. Write a script to get order & corresponding fillArray from Group3 in JSON format.
+3. Ask Group3 and Group1 to add the field bookId.
+4. Write a script to send data according to query to Group1 in JSON format.
+5. Resolve the bug in Position function.
+6. Handling exceptions through try-catch in every function along with displaying error message as well.
+7. How to archieve data in MongoDb.
+8. Handling the case when writing to the database fails.
