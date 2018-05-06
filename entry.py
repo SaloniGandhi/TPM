@@ -1,13 +1,44 @@
 from __future__ import division
-from flask import Flask
+
+import flask
 from pymongo import MongoClient # Database connector
 from bson.objectid import ObjectId # For ObjectId to work
 import json
 
-app = Flask(__name__)
+import time
+import datetime
+
+import requests
+
+
+app = flask.Flask(__name__)
 client = MongoClient('localhost', 27017)    #Configure the connection to the database
 db = client.tpmDB    #Select the database
 
+
+@app.route('/orderGet', methods=["POST"])
+def fetchOrder():
+	ack = {"success": True}
+	if flask.request.method == "POST":
+		if flask.request.is_json:
+			content = flask.request.get_json()	
+			print content
+			print "_________________________________________________"
+			
+			order_id = content['order_id']
+			user_id = content['user_id']
+			product_id = content['product_id']
+			side = content['side']
+			ask_price = content['ask_price']
+			total_qty = content['total_qty']
+			order_stamp = content['order_stamp']
+			order_sate = content['state']
+			fill = content['fill']
+			ts = time.time()
+			recv_stamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+			ack['success'] = True
+
+	return flask.jsonify(ack)	
 
 @app.route('/createTrade')
 def createTrade():
@@ -189,4 +220,4 @@ def evaluatePosition(trade, fill):
 
 
 if __name__ == '__main__':
-    app.run()
+	app.run(port=5001, debug=True)
