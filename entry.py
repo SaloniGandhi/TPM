@@ -18,6 +18,83 @@ db = client.tpmDB    #Select the database
 order = {}
 fill = {}
 
+@app.route('/sendUITrade' , methods= ["POST"])
+def sendToUiTrade():
+	content = flask.request.form
+	clientId = content['user_id']
+ 	cursor = db.Trade.find({"clientId" : clientId})
+	tradeColumns = [
+		{ 'id': 0, 'name': "TradeID", 'sortAsc': True },
+	 	{ 'id': 1, 'name': "OrderID", 'sortAsc': True },
+	 	{ 'id': 2, 'name': "FillId", 'sortAsc': True },
+	 	{ 'id': 3, 'name': "Account", 'sortAsc': True },
+	 	{ 'id': 4, 'name': "Symbol", 'sortAsc': True },
+	 	{ 'id': 5, 'name': "Side", 'sortAsc': True },
+	 	{ 'id': 6, 'name': "QtyDone", 'sortAsc': True },
+	 	{ 'id': 7, 'name': "Price", 'sortAsc': True },
+	 	{ 'id': 8, 'name': "CounterParty", 'sortAsc': True },
+	 	{ 'id': 9, 'name': "Exchange", 'sortAsc': True },
+	]
+
+	data = []
+	for row in cursor :
+		tradeData = []
+		tradeData.append("#")##
+		tradeData.append(row["orderId"])
+		tradeData.append("#")
+		tradeData.append(row["bookId"])
+		tradeData.append(row["productId"])
+		tradeData.append(row["side"])
+		tradeData.append(row["qtySize"])
+		tradeData.append(row["price"])
+		tradeData.append(row["counterParty"])
+		tradeData.append(row["exId"])
+
+		data.append(tradeData)
+
+	Trade = {'columns' : tradeColumns, 'data' : data}
+	ack = {'TradeManagement' : Trade}
+	response = flask.jsonify(ack)
+	response.headers.add('Access-Control-Allow-Origin', '*')
+	response.headers.add('Access-Control-Allow-Credentials', 'false')
+	return response
+
+
+@app.route('/sendUIPosition' , methods= ["POST"])
+def sendToUiPosition():
+	content = flask.request.form
+	bookId = content['account']
+ 	cursor = db.Position.find({"bookId" : bookId})
+	positionColumns = [
+		{ 'id': 0, 'name': "Account", 'sortAsc': True },
+	 	{ 'id': 1, 'name': "Symbol", 'sortAsc': True },
+	 	{ 'id': 2, 'name': "Netposition", 'sortAsc': True },
+	 	{ 'id': 3, 'name': "AvgPrice", 'sortAsc': True },
+	 	{ 'id': 4, 'name': "Ltp", 'sortAsc': True },
+	 	{ 'id': 5, 'name': "RealizedPnL", 'sortAsc': True },
+	 	{ 'id': 6, 'name': "UnRealizedPnL", 'sortAsc': True },
+	]
+
+	data = []
+	for row in cursor :
+		positionData = []
+		positionData.append(row["bookId"])##
+		positionData.append(row["productId"])
+		positionData.append(row["netPosition"])
+		positionData.append(row["avgPrice"])
+		positionData.append(row["marketPrice"])
+		positionData.append(row["realisedPL"])
+		positionData.append(row["unrealisedPL"])
+		data.append(positionData)
+
+	Position = {'columns' : positionColumns, 'data' : data}
+	ack = {'PL' : Position}
+	response = flask.jsonify(ack)
+	response.headers.add('Access-Control-Allow-Origin', '*')
+	response.headers.add('Access-Control-Allow-Credentials', 'false')
+	return response
+
+
 
 @app.route('/orderGet', methods=["POST"])
 def fetchOrder():
@@ -234,4 +311,4 @@ def evaluatePosition(trade, fill):
 	return 1
 
 if __name__ == '__main__':
-	app.run(port=5001, debug=True)
+	app.run(port=5001, debug=True , host='0.0.0.0')
