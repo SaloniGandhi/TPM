@@ -75,7 +75,7 @@ def createTrade():
 		"orderStamp" : order["orderStamp"],
 		"exStamp" : fill["exStamp"],
 		"tradeStamp" : "#",
-		"counterParty" : "Group2" , #fill["counterParty"],
+		"counterParty" : "#" , #fill["counterParty"],
 		"commision" : "0",
 		"state" : "Closed"
 	}
@@ -104,7 +104,7 @@ def createTrade():
 	    	"orderStamp" : order["orderStamp"],
 	    	"exStamp" : fill["exStamp"],
 	    	"tradeStamp" : "#",
-	    	"counterParty" : "Group2" , #fill["counterParty"],
+	    	"counterParty" : "#" , #fill["counterParty"],
 	    	"commision" : "1",
 	    	"state" : "Closed"
 	    }
@@ -133,17 +133,16 @@ def evaluatePosition(trade, fill):
 	tradePrice = float(fill["price"])
 
 	if(cursor == None):
-		# netPosition
-		if(trade["side"] == "0"):
-			lUnrealisedPL = fQtySize * lMarketPrice
-			lNetPosition = fQtySize
-		else:
-			lUnrealisedPL = -1 * fQtySize * lMarketPrice
-			lNetPosition = -1 * fQtySize
-		#realisedPL
-		lRealisedPL = 0
-		#avgPrice
-		lAvgPrice = tradePrice
+	    # netPosition
+	    if(trade["side"] == "0"):
+	        lNetPosition = fQtySize
+	    else:
+	        lNetPosition = -1 * fQtySize
+	    #realisedPL
+	    lRealisedPL = 0
+	    #avgPrice
+		lunrealisedPL = fQtySize * lMarketPrice
+	    lAvgPrice = tradePrice
 
 	else:
 	    cursor["netPosition"] = int(cursor["netPosition"])
@@ -216,7 +215,7 @@ def evaluatePosition(trade, fill):
 	            lAvgPrice = tradePrice
 	            #realisedPL
 	            lRealisedPL = 0
-		lUnrealisedPL = lNetPosition * lMarketPrice
+		lunrealisedPL = cursor["netPosition"] * marketPrice
 	db.Position.update({
 		"bookId" : fill["bookId"],
 		"productId" : trade["productId"]
